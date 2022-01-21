@@ -7,7 +7,7 @@ import math
 import os
 import cv2
 import numpy as np
-
+from utils import fusion
 
 __all__ = [
     'VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn',
@@ -71,7 +71,7 @@ class VGG(nn.Module):
 
         localization_map_normed = self.get_atten_map(out, label, True)
         self.attention = localization_map_normed
-        feat_erase = self.erase_feature_maps(localization_map_normed, feat, self.threshold)
+        feat_erase = 1 - localization_map_normed #self.erase_feature_maps(localization_map_normed, feat, self.threshold)
 
         # Branch B
         out_erase = self.cls_erase(feat_erase)
@@ -104,7 +104,8 @@ class VGG(nn.Module):
     def get_localization_maps(self):
         map1 = self.normalize_atten_maps(self.map1)
         map_erase = self.normalize_atten_maps(self.map_erase)
-        return torch.max(map1, map_erase)
+
+        return fusion.attention_fusion_weight(map1, map_erase)#torch.max(map1, map_erase)
         # return map_erase
 
     def get_heatmaps(self, gt_label):
